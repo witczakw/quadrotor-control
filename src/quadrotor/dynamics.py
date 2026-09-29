@@ -47,19 +47,35 @@ def allocation_matrix(params: QuadParams) -> Array:
 
 
 def mix(params: QuadParams, alloc_inv: Array, thrust: float, torque: Array) -> Array:
-    """Wrench -> rotor speed commands with thrust-priority desaturation (see Quadrotor.mix)."""
+    """Wrench -> rotor speed commands with desaturation (see :meth:`Quadrotor.mix`).
+
+    Rotor thrusts are ``f = alloc_inv @ [T, tau]``. If some rotor leaves ``[f_min, f_max]`` the
+    common thrust ``T`` is first shifted as little as possible (torque has priority, so that
+    attitude control survives at very low or very high thrust); if no feasible shift exists the
+    torques are scaled down until the request fits.
+    """
     f_min = params.kf * params.w_min**2
     f_max = params.kf * params.w_max**2
     thrust = float(np.clip(thrust, 4 * f_min, 4 * f_max))
     f_thrust = alloc_inv[:, 0] * thrust
     f_torque = alloc_inv[:, 1:] @ np.asarray(torque, float)
-    scale = 1.0
-    for ft, fq in zip(f_thrust, f_torque, strict=True):
-        if fq > 1e-12:
-            scale = min(scale, (f_max - ft) / fq)
-        elif fq < -1e-12:
-            scale = min(scale, (f_min - ft) / fq)
-    f = f_thrust + max(scale, 0.0) * f_torque
+    # a shift of T by dT changes rotor i by alloc_inv[i, 0] * dT
+    lo = max(
+        (f_min - fq - ft) / a for ft, fq, a in zip(f_thrust, f_torque, alloc_inv[:, 0], strict=True)
+    )
+    hi = min(
+        (f_max - fq - ft) / a for ft, fq, a in zip(f_thrust, f_torque, alloc_inv[:, 0], strict=True)
+    )
+    if lo <= hi:
+        f = f_thrust + f_torque + alloc_inv[:, 0] * float(np.clip(0.0, lo, hi))
+    else:
+        scale = 1.0
+        for ft, fq in zip(f_thrust, f_torque, strict=True):
+            if fq > 1e-12:
+                scale = min(scale, (f_max - ft) / fq)
+            elif fq < -1e-12:
+                scale = min(scale, (f_min - ft) / fq)
+        f = f_thrust + max(scale, 0.0) * f_torque
     return np.sqrt(np.clip(f, f_min, f_max) / params.kf)
 
 
