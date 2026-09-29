@@ -121,6 +121,7 @@ class Simulation:
         }
         sig = np.zeros((n_log, 9))
         power = np.zeros(n_log)
+        aux = np.zeros((n_log, 12))
         t_log = np.zeros(n_log)
         v_wind = self.wind.mean.copy()
         i_log = 0
@@ -130,6 +131,8 @@ class Simulation:
                 eff = np.ones(4)
                 eff[self.fault.rotor] = self.fault.efficiency
                 quad.rotor_efficiency = eff
+            v_wind = self.wind.step(PHYSICS_DT)
+            est.observe(x, t, k, quad, w_cmd, v_wind)
             if k % n_ctrl == 0:
                 estimate = est.estimate(x, t=t, quad=quad, w_cmd=w_cmd, v_wind=v_wind)
                 ref = self.traj(t)
@@ -146,10 +149,9 @@ class Simulation:
                     log["w"][i_log] = w_cmd
                     if est.sigma is not None:
                         sig[i_log] = est.sigma
+                    aux[i_log] = getattr(est, "aux", aux[i_log])
                     power[i_log] = self.params.km * float(np.sum(x[IDX_R] ** 3))
                     i_log += 1
-            v_wind = self.wind.step(PHYSICS_DT)
-            est.observe(x, t, k, quad, w_cmd, v_wind)
             x = quad.step(x, w_cmd, PHYSICS_DT, v_wind)
         return SimResult(
             t=t_log,
@@ -162,4 +164,5 @@ class Simulation:
             est_sigma=sig if est.sigma is not None else None,
             w_cmd=log["w"],
             power=power,
+            extra={"bias": aux},
         )
