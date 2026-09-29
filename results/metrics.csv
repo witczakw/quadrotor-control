@@ -1,0 +1,5 @@
+scenario,controller,case,estimator,rmse_pos_m,max_err_m,energy_J,final_err_m,gate_miss_m,failed
+figure8,PID,nominal,ekf,0.0963,0.227,5612.3,0.0321,,False
+figure8,Geometric,nominal,ekf,0.0869,0.2032,5480.7,0.0397,,False
+figure8,LQR,nominal,ekf,0.094,0.2197,5569.1,0.048,,False
+figure8,MPC,nominal,ekf,0.1055,0.2555,5568.3,0.0579,,False

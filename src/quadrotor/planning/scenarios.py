@@ -56,11 +56,11 @@ def smooth_yaw(t0: float, t1: float, yaw1: float) -> Callable[[float], tuple[flo
     return f
 
 
-def figure_eight(v_avg: float = 1.8, a_max: float = 6.0) -> Scenario:
+def figure_eight(segment_time: float = 0.6, a_max: float = 6.0) -> Scenario:
     """3D lemniscate: 3 m x 1.6 m loops, vertical excursion of 1 m between the two crossings."""
-    th = np.linspace(0.0, 2 * np.pi, 17)
+    th = np.linspace(0.0, 2 * np.pi, 25)
     wp = np.column_stack([1.6 * np.sin(th), 0.8 * np.sin(2 * th), 1.5 + 0.5 * (1 - np.cos(th))])
-    traj = _finalize(MinSnapTrajectory(wp, allocate_times(wp, v_avg)), a_max)
+    traj = _finalize(MinSnapTrajectory(wp, np.full(len(wp) - 1, segment_time)), a_max)
     return Scenario("figure8", traj, traj.duration + 2.0)
 
 
