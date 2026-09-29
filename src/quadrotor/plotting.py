@@ -193,22 +193,27 @@ def animate(
     step = max(1, round(speed / (fps * (t[1] - t[0]))))
     frames = np.arange(0, len(t), step)
     ref = next(iter(results.values())).ref_p
-    fig = plt.figure(figsize=(7.2, 5.4))
+    fig = plt.figure(figsize=(7.2, 4.8))
     ax = fig.add_subplot(projection="3d")
+    ax.view_init(elev=28, azim=-62)
     ax.plot(*ref.T, "k--", lw=1, alpha=0.6, label="reference")
     _draw_gates(ax, sc)
     allp = np.vstack([r.x[:, IDX_P] for r in results.values()] + [ref])
-    lo, hi = allp.min(0), allp.max(0)
-    mid, span = (lo + hi) / 2, max(float((hi - lo).max()), 3.0) / 2
-    ax.set_xlim(mid[0] - span, mid[0] + span)
-    ax.set_ylim(mid[1] - span, mid[1] + span)
-    ax.set_zlim(max(mid[2] - span, 0), mid[2] + span)
-    ax.set_box_aspect((1, 1, 1))
+    lo, hi = allp.min(0) - 0.3, allp.max(0) + 0.3
+    half = np.maximum((hi - lo) / 2, 0.8)
+    half = np.maximum(half, 0.22 * half.max())  # keep short axes readable on long scenes
+    mid = (lo + hi) / 2
+    ax.set_xlim(mid[0] - half[0], mid[0] + half[0])
+    ax.set_ylim(mid[1] - half[1], mid[1] + half[1])
+    ax.set_zlim(mid[2] - half[2], mid[2] + half[2])
+    ax.set_box_aspect(tuple(2 * half))
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
     ax.set_zlabel("z [m]")
-    L = params.arm_length
-    arms = np.array([[1, -1, 0], [1, 1, 0], [-1, 1, 0], [-1, -1, 0]]) * L / np.sqrt(2)
+    # the vehicle is drawn enlarged so that it is visible on the scale of the scene
+    scale = 0.07 * float((2 * half).max()) / params.arm_length
+    arms = np.array([[1, -1, 0], [1, 1, 0], [-1, 1, 0], [-1, -1, 0]]) * scale * params.arm_length
+    arms = arms / np.sqrt(2)
     trails, frames_art = {}, {}
     for n in names:
         (trails[n],) = ax.plot([], [], [], color=COLORS[n], lw=1.3, label=n)
@@ -224,7 +229,7 @@ def animate(
             R = quat_to_rot(r.x[i, IDX_Q])
             tr = r.x[max(0, i - 400) : i + 1, IDX_P]
             trails[n].set_data_3d(tr[:, 0], tr[:, 1], tr[:, 2])
-            pts = (R @ (arms * 3.0).T).T + p  # arms enlarged 3x for visibility
+            pts = (R @ arms.T).T + p
             for k, (a, b) in enumerate([(0, 2), (1, 3)]):
                 seg = np.array([pts[a], pts[b]])
                 frames_art[n][k].set_data_3d(seg[:, 0], seg[:, 1], seg[:, 2])

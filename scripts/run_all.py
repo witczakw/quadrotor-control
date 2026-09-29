@@ -160,7 +160,8 @@ def main() -> None:
         w.writerows(steps)
     md = build_markdown(rows, steps, scenarios)
     (RESULTS / "metrics.md").write_text(md)
-    update_readme(md)
+    if not args.quick:
+        update_readme(md)
 
     print("plotting ...", flush=True)
     params = QuadParams.from_yaml()
