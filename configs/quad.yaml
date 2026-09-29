@@ -1,0 +1,11 @@
+# Physical parameters of the quadrotor (SI units). Loaded by quadrotor.params.QuadParams.from_yaml
+mass: 1.2                # [kg]
+inertia: [0.0123, 0.0123, 0.0224]   # diagonal of the inertia tensor [kg m^2]
+arm_length: 0.225        # distance rotor axis <-> centre of mass [m]
+kf: 3.0e-6               # thrust coefficient T_i = kf * w_i^2 [N s^2]
+km: 1.1e-7               # reaction torque coefficient Q_i = km * w_i^2 [N m s^2]
+tau_motor: 0.025         # motor first-order time constant [s]
+w_min: 100.0             # minimum rotor speed [rad/s]
+w_max: 1500.0            # maximum rotor speed [rad/s]
+drag_coeff: 0.15         # linear aerodynamic drag F = -cd (v - v_wind) [N s/m]
+gravity: 9.81            # [m/s^2]
